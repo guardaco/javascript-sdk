@@ -5,17 +5,12 @@
   "main": "lib/index.js",
   "scripts": {
     "test": "cross-env NODE_ENV=test jest",
-    "test:ledger": "qunit --require babel-polyfill tests-ledger/tests.js",
-    "test:ledger:browser": "./tests-ledger/run-browser-tests.sh",
     "build": "rm -rf lib && npx babel src -d lib",
     "build:docs": "npx jsdoc-to-markdown -f src/**/*.js > docs/jsdoc.md",
     "prepublishOnly": "npm run build",
     "lint": "eslint --fix src __tests__"
   },
   "dependencies": {
-    "@ledgerhq/hw-transport-node-hid": "^4.33.3",
-    "@ledgerhq/hw-transport-u2f": "^4.32.0",
-    "@ledgerhq/hw-transport-web-ble": "^4.32.0",
     "axios": "^0.18.0",
     "babel-polyfill": "^6.26.0",
     "base32-encode": "^1.1.0",
