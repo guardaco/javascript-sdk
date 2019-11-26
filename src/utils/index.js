@@ -3,8 +3,10 @@
  */
 
 import hexEncoding from "crypto-js/enc-hex"
+import SHA3 from "crypto-js/sha3"
 import SHA256 from "crypto-js/sha256"
 import RIPEMD160 from "crypto-js/ripemd160"
+import * as crypto from "../crypto"
 
 /**
  * @param {arrayBuffer} buf
@@ -201,8 +203,8 @@ export const ensureHex = str => {
 }
 
 /**
- * Performs a SHA256 followed by a RIPEMD160.
- * @param {string} hex - String to hash
+ * Computes a SHA256 followed by a RIPEMD160.
+ * @param {string} hex message to hash
  * @returns {string} hash output
  */
 export const sha256ripemd160 = (hex) => {
@@ -214,8 +216,8 @@ export const sha256ripemd160 = (hex) => {
 }
 
 /**
- * Performs a single SHA256.
- * @param {string} hex - String to hash
+ * Computes a single SHA256 digest.
+ * @param {string} hex message to hash
  * @returns {string} hash output
  */
 export const sha256 = (hex) => {
@@ -225,3 +227,46 @@ export const sha256 = (hex) => {
   return SHA256(hexEncoded).toString()
 }
 
+/**
+ * Computes a single SHA3 (Keccak) digest.
+ * @param {string} hex message to hash
+ * @returns {string} hash output
+ */
+export const sha3 = (hex) => {
+  if (typeof hex !== "string") throw new Error("sha3 expects a hex string")
+  if (hex.length % 2 !== 0) throw new Error(`invalid hex string length: ${hex}`)
+  const hexEncoded = hexEncoding.parse(hex)
+  return SHA3(hexEncoded).toString()
+}
+
+/**
+ * Computes sha256 of random number and timestamp
+ * @param {String} randomNumber
+ * @param {Number} timestamp
+ * @returns {string} sha256 result
+ */
+export const calculateRandomNumberHash = (randomNumber, timestamp) => {
+  const timestampHexStr = timestamp.toString(16)
+  let timestampHexStrFormat = timestampHexStr
+  for (let i = 0; i < 16 - timestampHexStr.length; i++) {
+    timestampHexStrFormat = '0' + timestampHexStrFormat;
+  }
+  const timestampBytes = Buffer.from(timestampHexStrFormat, "hex")
+  const newBuffer = Buffer.concat([Buffer.from(randomNumber, "hex"), timestampBytes])
+  return sha256(newBuffer.toString('hex'))
+}
+
+/**
+ * Computes swapID
+ * @param {String} randomNumberHash
+ * @param {String} sender
+ * @param {String} senderOtherChain
+ * @returns {string} sha256 result
+ */
+export const calculateSwapID = (randomNumberHash, sender, senderOtherChain) => {
+  const randomNumberHashBytes = Buffer.from(randomNumberHash, "hex")
+  const senderBytes = crypto.decodeAddress(sender)
+  const sendOtherChainBytes = Buffer.from(senderOtherChain.toLowerCase(), "utf8")
+  const newBuffer = Buffer.concat([randomNumberHashBytes, senderBytes, sendOtherChainBytes])
+  return sha256(newBuffer.toString('hex'))
+}

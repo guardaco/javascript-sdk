@@ -1,14 +1,14 @@
 /**
- * @module amino
+ * @module amino.encode
  */
 
 import vstruct from "varstruct"
 import { Buffer } from "safe-buffer"
-import _ from "lodash"
+import is from "is_js"
 
-import VarInt, { UVarInt } from "./varint"
+import { UVarInt } from "./varint"
 import typeToTyp3 from "../utils/encoderHelper"
-import { typePrefix } from "../tx/"
+import { TypePrefixes } from "../tx/"
 
 const VarString = vstruct.VarString(UVarInt)
 
@@ -36,7 +36,7 @@ export const encodeNumber = (num) => UVarInt.encode(num)
  * encode bool
  * @param b
  */
-export const encodeBool = (b) => b ? VarInt.encode(1): VarInt.encode(0)
+export const encodeBool = (b) => b ? UVarInt.encode(1): UVarInt.encode(0)
 
 /**
  * encode string
@@ -76,10 +76,10 @@ export const convertObjectToSignBytes = obj =>
  * @param {Object} obj
  *  */
 export const marshalBinary = (obj) => {
-  if (!_.isObject(obj))
+  if (!is.object(obj))
     throw new TypeError("data must be an object")
 
-  return encodeBinary(obj, null, true).toString("hex")
+  return encodeBinary(obj, -1, true).toString("hex")
 }
 
 /**
@@ -87,7 +87,7 @@ export const marshalBinary = (obj) => {
  * @param {Object} obj
  *  */
 export const marshalBinaryBare = (obj) => {
-  if (!_.isObject(obj))
+  if (!is.object(obj))
     throw new TypeError("data must be an object")
 
   return encodeBinary(obj).toString("hex")
@@ -105,30 +105,30 @@ export const encodeBinary = (val, fieldNum, isByteLenPrefix) => {
     throw new TypeError("unsupported type")
 
   if(Buffer.isBuffer(val)) {
-    if(isByteLenPrefix){
+    if(isByteLenPrefix) {
       return Buffer.concat([UVarInt.encode(val.length), val])
     }
     return val
   }
 
-  if(_.isPlainObject(val)){
-    return encodeObjectBinary(val, isByteLenPrefix)
-  }
-
-  if(_.isArray(val)){
+  if(is.array(val)) {
     return encodeArrayBinary(fieldNum, val, isByteLenPrefix)
   }
 
-  if(_.isNumber(val)){
+  if(is.number(val)) {
     return encodeNumber(val)
   }
 
-  if(_.isBoolean(val)){
+  if(is.boolean(val)) {
     return encodeBool(val)
   }
 
-  if(_.isString(val)){
+  if(is.string(val)) {
     return encodeString(val)
+  }
+
+  if(is.object(val)) {
+    return encodeObjectBinary(val, isByteLenPrefix)
   }
 
   return
@@ -157,7 +157,7 @@ export const encodeObjectBinary = (obj, isByteLenPrefix) => {
 
     if (isDefaultValue(obj[key])) return
 
-    if (_.isArray(obj[key]) && obj[key].length > 0) {
+    if (is.array(obj[key]) && obj[key].length > 0) {
       bufferArr.push(encodeArrayBinary(index, obj[key]))
     } else {
       bufferArr.push(encodeTypeAndField(index, obj[key]))
@@ -168,8 +168,8 @@ export const encodeObjectBinary = (obj, isByteLenPrefix) => {
   let bytes = Buffer.concat(bufferArr)
 
   // add prefix
-  if(typePrefix[obj.msgType]) {
-    const prefix = Buffer.from(typePrefix[obj.msgType], "hex")
+  if(TypePrefixes[obj.msgType]) {
+    const prefix = Buffer.from(TypePrefixes[obj.msgType], "hex")
     bytes = Buffer.concat([prefix, bytes])
   }
 
@@ -220,8 +220,8 @@ const encodeTypeAndField = (index, field) => {
 const isDefaultValue = (obj) => {
   if(obj === null) return false
 
-  return (_.isNumber(obj) && obj === 0)
-        || (_.isString(obj) && obj === "")
-        || (_.isArray(obj) && obj.length === 0)
-
+  return (is.number(obj) && obj === 0)
+        || (is.string(obj) && obj === "")
+        || (is.array(obj) && obj.length === 0)
+        || (is.boolean(obj) && !obj)
 }
