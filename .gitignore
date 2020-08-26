@@ -27,6 +27,10 @@ tests-ledger/buffer-polyfill.js
 # testing
 /coverage
 
+/typings
+
+/.vscode
+/.idea
 # misc
 .DS_Store
 .env.local
@@ -37,5 +41,4 @@ tests-ledger/buffer-polyfill.js
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-yarn.lock
 package-lock.json
